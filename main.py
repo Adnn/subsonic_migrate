@@ -59,8 +59,15 @@ username_map = {
 def translate(dico, value):
     return dico.get(value, value)
 
+class TranslationError:
+    def __init__(self, key_value):
+        self.key = key_value
+
 def translate_id(source_id, source_id_map, dest_name_map):
-   path = source_id_map[source_id].PATH
+   try:
+       path = source_id_map[source_id].PATH
+   except KeyError:
+       raise TranslationError(source_id)      
    destination_media_file = dest_name_map.get(path)
    return destination_media_file.ID if destination_media_file else None
 
@@ -125,13 +132,20 @@ if __name__ == "__main__":
                     .format(path=source_id_mapping[starred.MEDIA_FILE_ID].PATH, user=translated_user))
             continue
 
-        destination_id = translate_id(starred.MEDIA_FILE_ID, source_id_mapping, destination_name_mapping)
+        try:
+            destination_id = translate_id(starred.MEDIA_FILE_ID, source_id_mapping, destination_name_mapping)
+        except TranslationError as e:
+            print("[WARN] The starred file with id '{id}', starred by {user}, does not exist in the SOURCE list of media files: ignoring it."
+                    .format(id=e.key, user=translated_user))
+            continue
+
         if destination_id is None:
             print("[WARN] The media file '{path}' starred by {user} does not exist in the DESTINATION: not importing it."
                     .format(path=source_id_mapping[starred.MEDIA_FILE_ID].PATH, user=translated_user))
             continue
 
         starred_statements.append(gSTARRED.format(pk=index, media_file_id=destination_id, username=translated_user, created=starred.CREATED))
+            
 
     write_file("output/import_starreds.sql", starred_statements)
         
@@ -165,7 +179,12 @@ if __name__ == "__main__":
                 print("The playlist '{playlist}' by {user} is empty: not importing it.".format(playlist=playlist.NAME, user=playlist.USERNAME))
                 playlist_statements.pop()
             for pl_file in filelist:
-                destination_id = translate_id(pl_file.MEDIA_FILE_ID, source_id_mapping, destination_name_mapping)
+                try:
+                    destination_id = translate_id(pl_file.MEDIA_FILE_ID, source_id_mapping, destination_name_mapping)
+                except TranslationError as e:
+                    print("[WARN] The media file with id '{id}' in playlist '{playlist}' does not exist in the SOURCE list of media files: ignoring it."
+                            .format(id=e.key, playlist=playlist.NAME))
+                    continue
                 if destination_id is None:
                     print("[WARN] The media file '{path}' in playlist '{playlist}' does not exist in the DESTINATION: not importing it."
                             .format(path=source_id_mapping[pl_file.MEDIA_FILE_ID].PATH, playlist=playlist.NAME))
