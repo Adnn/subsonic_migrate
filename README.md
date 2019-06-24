@@ -4,7 +4,7 @@ A collection of simple scripts to export (.dsv) existing Subsonic ratings, starr
 ## Prerequisites
 This procedures assumes the source (migrated-from) and destination (migrated-to) have the same media folders' organisation and content, because the files are matched by their absolute path.
 
-* HSQLDB sqltool command line should be available on your system (on Ubuntu: apt-get install hsqldb-utils)
+* HSQLDB sqltool command line should be available on your system (on Ubuntu: apt-get install hsqldb-utils). **IMPORTANT**: Version 1.8 is required, it won't work with version 2. In v 1.8, the utilities are a class in the main `hsqldb` jar
  * Configure it to get access to your subsonic db (under Linux, the path is /var/subsonic/db/subsonic), creating a sqltool.rc file
  ```
  # A personal, local, persistent database.
